@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-page-node-id="9K58qKNyAwuG5R5YFHKxUs">
+<head data-page-node-id="4CMN0k0qzhmNOZbEPTO8Gd">
+<meta charset="UTF-8" data-page-node-id="2w20ERqRO97T3OW6Q3jrSa">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="hG3zkcAYaaB2p4U51zrn7b">
+<title>表情包助手</title>
+<style>
+  :root {
+    --bg: rgba(243, 243, 246, .82);
+    --surface: rgba(255, 255, 255, .85);
+    --surface-solid: #ffffff;
+    --hover: rgba(0, 0, 0, .045);
+    --active: rgba(0, 0, 0, .08);
+    --accent: #0067c0;
+    --accent-grad: linear-gradient(135deg, #0067c0, #3f8cff);
+    --accent-soft: rgba(0, 103, 192, .10);
+    --text-1: #1b1b1f;
+    --text-2: #5f5f66;
+    --text-3: #9a9aa2;
+    --line: rgba(0, 0, 0, .07);
+    --r-lg: 16px;
+    --r-md: 12px;
+    --r-sm: 8px;
+    --shadow-1: 0 1px 2px rgba(0,0,0,.04), 0 1px 3px rgba(0,0,0,.05);
+    --shadow-2: 0 6px 16px rgba(0,0,0,.09), 0 2px 5px rgba(0,0,0,.05);
+    --shadow-3: 0 18px 48px rgba(0,0,0,.22), 0 6px 14px rgba(0,0,0,.12);
+    --ease: cubic-bezier(.2, .8, .2, 1);
+    --spring: cubic-bezier(.34, 1.4, .44, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    font-family: "Segoe UI Variable Text", "Segoe UI", "Microsoft YaHei UI",
+                 "Microsoft YaHei", system-ui, sans-serif;
+    font-size: clamp(11px, 1.15vw, 13.5px);
+    -webkit-font-smoothing: antialiased;
+    color: var(--text-1);
+    background: transparent;
+    user-select: none;
+    cursor: default;
+  }
+
+  #app {
+    display: flex; flex-direction: column;
+    width: 100%; height: 100%;
+    background: var(--bg);
+    backdrop-filter: blur(40px) saturate(1.8);
+    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    border: 1px solid rgba(255, 255, 255, .6);
+    border-radius: var(--r-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-3);
+    animation: win-in .45s var(--ease) both;
+  }
+  @keyframes win-in {
+    from { opacity: 0; transform: scale(.94) translateY(14px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* ===== 顶部栏 ===== */
+  #topbar {
+    display: flex; align-items: center;
+    gap: 12px;
+    padding: 14px 14px 0 18px;
+    flex-shrink: 0;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; flex-shrink: 0; }
+  .brand .logo {
+    width: 26px; height: 26px;
+    border-radius: 8px;
+    background: var(--accent-grad);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 8px rgba(0, 103, 192, .35);
+  }
+  .brand .logo svg { width: 15px; height: 15px; }
+  .brand .name { font-size: 14px; font-weight: 600; letter-spacing: .2px; }
+  #topbar .spacer { flex: 1; }
+
+  .win-btn {
+    width: 36px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent;
+    border-radius: var(--r-sm);
+    color: var(--text-2);
+    cursor: pointer;
+    transition: background .15s var(--ease), color .15s var(--ease);
+  }
+  .win-btn:hover { background: var(--hover); color: var(--text-1); }
+  .win-btn.close:hover { background: #e81123; color: #fff; }
+  .win-btn svg { width: 13px; height: 13px; }
+
+  /* ===== 标签页 + 搜索行 ===== */
+  #nav-row {
+    display: flex; align-items: center;
+    gap: 14px;
+    padding: 12px 18px 12px;
+    flex-shrink: 0;
+  }
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--hover);
+    border-radius: 10px;
+    padding: 3px;
+    flex-shrink: 0;
+  }
+  .tab {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 16px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all .18s var(--ease);
+  }
+  .tab svg { width: 14px; height: 14px; }
+  .tab:hover { color: var(--text-1); }
+  .tab.active {
+    background: var(--surface-solid);
+    color: var(--accent);
+    box-shadow: var(--shadow-1);
+  }
+
+  #search-box {
+    position: relative;
+    flex: 1;
+    min-width: 120px;
+  }
+  #search-box .icon {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 14px; height: 14px;
+    color: var(--text-3);
+    pointer-events: none;
+  }
+  #search {
+    width: 100%; height: 34px;
+    padding: 0 14px 0 34px;
+    border: 1px solid var(--line);
+    border-radius: 17px;
+    background: var(--surface);
+    font-size: 12.5px;
+    color: var(--text-1);
+    outline: none;
+    font-family: inherit;
+    transition: all .2s var(--ease);
+  }
+  #search::placeholder { color: var(--text-3); }
+  #search:focus {
+    background: var(--surface-solid);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3.5px var(--accent-soft);
+  }
+
+  .icon-btn {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: transparent;
+    border-radius: 50%;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all .15s var(--ease);
+    flex-shrink: 0;
+  }
+  .icon-btn:hover { background: var(--hover); color: var(--text-1); }
+  .icon-btn svg { width: 16px; height: 16px; }
+
+  /* ===== 页面容器 ===== */
+  #pages { flex: 1; min-height: 0; position: relative; }
+  .page {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(12px);
+    transition: opacity .25s var(--ease), transform .25s var(--ease);
+  }
+  .page.active {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+  }
+
+  /* ===== 表情网格 ===== */
+  #grid-scroll {
+    flex: 1; overflow-y: auto;
+    padding: 4px 16px 16px;
+  }
+  #grid-scroll::-webkit-scrollbar,
+  #history-scroll::-webkit-scrollbar { width: 10px; }
+  #grid-scroll::-webkit-scrollbar-thumb,
+  #history-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,.14);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 5px;
+  }
+  #grid-scroll::-webkit-scrollbar-thumb:hover,
+  #history-scroll::-webkit-scrollbar-thumb:hover { background-color: rgba(0,0,0,.26); }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(108px, 28vw), 1fr));
+    gap: clamp(6px, 1vw, 12px);
+  }
+  .meme {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--r-md);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--shadow-1);
+    transition: transform .22s var(--spring), box-shadow .22s var(--ease),
+                border-color .18s var(--ease);
+    animation: card-in .38s var(--ease) both;
+    animation-delay: calc(var(--i) * 22ms);
+  }
+  @keyframes card-in {
+    from { opacity: 0; transform: translateY(14px) scale(.92); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .meme:hover {
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: var(--shadow-2), 0 0 0 1.5px var(--accent);
+    border-color: transparent;
+    z-index: 2;
+  }
+  .meme:active { transform: scale(.95); transition-duration: .08s; }
+  .meme img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .meme .del {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 22px; height: 22px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(20, 20, 24, .55);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 11px;
+    cursor: pointer;
+    opacity: 0;
+    transform: scale(.7);
+    transition: all .18s var(--ease);
+  }
+  .meme:hover .del { opacity: 1; transform: scale(1); }
+  .meme .del:hover { background: #e81123; }
+  .meme .name-tag {
+    position: absolute;
+    left: 6px; right: 6px; bottom: 6px;
+    padding: 3px 8px;
+    background: rgba(20, 20, 24, .5);
+    backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 10.5px;
+    border-radius: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: all .2s var(--ease);
+    pointer-events: none;
+  }
+  .meme:hover .name-tag { opacity: 1; transform: translateY(0); }
+
+  /* ===== 剪贴板历史列表 ===== */
+  #history-scroll {
+    flex: 1; overflow-y: auto;
+    padding: 4px 12px 12px;
+  }
+  .h-item {
+    display: flex; align-items: center;
+    gap: 12px;
+    margin: 0 4px 6px;
+    padding: 10px 12px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    cursor: pointer;
+    box-shadow: var(--shadow-1);
+    transition: all .18s var(--ease);
+    animation: card-in .3s var(--ease) both;
+    animation-delay: calc(var(--i) * 16ms);
+    position: relative;
+    overflow: hidden;
+  }
+  .h-item:hover {
+    transform: translateX(3px);
+    box-shadow: var(--shadow-2), 0 0 0 1.5px var(--accent);
+  }
+  .h-item:active { transform: scale(.985); }
+  .h-item .h-icon {
+    width: 36px; height: 36px;
+    border-radius: 9px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .h-item .h-icon svg { width: 17px; height: 17px; color: var(--accent); }
+  .h-item .h-icon img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .h-item .h-body { flex: 1; min-width: 0; }
+  .h-item .h-text {
+    font-size: 12.5px;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .h-item .h-meta {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 3px;
+    font-size: 11px;
+    color: var(--text-3);
+  }
+  .h-item .h-actions {
+    display: flex; gap: 4px;
+    opacity: 0;
+    transition: opacity .15s var(--ease);
+    flex-shrink: 0;
+  }
+  .h-item:hover .h-actions { opacity: 1; }
+  .h-act {
+    width: 26px; height: 26px;
+    display: flex; align-items: center; justify-content: center;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-2);
+    cursor: pointer;
+    transition: all .14s var(--ease);
+  }
+  .h-act:hover { background: var(--hover); color: var(--text-1); }
+  .h-act.danger:hover { background: #e81123; color: #fff; }
+  .h-act svg { width: 13px; height: 13px; }
+  .h-act.pinned { color: var(--accent); opacity: 1; }
+  .h-item.pinned-item { border-color: rgba(0, 103, 192, .35); }
+
+  /* ===== 空状态 ===== */
+  .empty {
+    grid-column: 1 / -1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 10px;
+    padding: 64px 20px;
+    text-align: center;
+  }
+  .empty .icon-wrap {
+    width: 64px; height: 64px;
+    border-radius: 20px;
+    background: var(--accent-soft);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .empty .icon-wrap svg { width: 30px; height: 30px; color: var(--accent); }
+  .empty .t { font-size: 15px; font-weight: 600; color: var(--text-1); }
+  .empty .s { font-size: 12.5px; color: var(--text-3); }
+
+  /* ===== 涟漪 ===== */
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(0, 103, 192, .18);
+    transform: scale(0);
+    animation: rip .55s var(--ease) forwards;
+    pointer-events: none;
+  }
+  @keyframes rip { to { transform: scale(4); opacity: 0; } }
+
+  /* ===== 底部栏 ===== */
+  #bottombar {
+    display: flex; align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    flex-shrink: 0;
+    border-top: 1px solid var(--line);
+    background: rgba(255, 255, 255, .5);
+  }
+  #bottombar .hint {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11.5px;
+    color: var(--text-3);
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .kbd {
+    display: inline-flex; align-items: center;
+    padding: 2.5px 7px;
+    background: var(--surface-solid);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-2);
+  }
+  #bottombar .spacer { flex: 1; }
+
+  .btn {
+    height: 34px;
+    padding: 0 18px;
+    border-radius: var(--r-sm);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    border: none;
+    transition: all .16s var(--ease);
+    flex-shrink: 0;
+  }
+  .btn:active { transform: scale(.95); }
+  .btn-ghost {
+    background: var(--surface-solid);
+    color: var(--text-1);
+    border: 1px solid var(--line);
+  }
+  .btn-ghost:hover { background: var(--hover); }
+  .btn-primary {
+    background: var(--accent-grad);
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(0, 103, 192, .3);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 5px 14px rgba(0, 103, 192, .42);
+    filter: brightness(1.07);
+  }
+  .btn.danger-text {
+    background: transparent;
+    color: #e81123;
+    border: 1px solid rgba(229, 17, 35, .3);
+  }
+  .btn.danger-text:hover { background: rgba(229, 17, 35, .08); }
+
+  /* ===== 设置弹层 ===== */
+  #settings-mask {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, .25);
+    backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s var(--ease);
+    z-index: 50;
+  }
+  #settings-mask.show { opacity: 1; pointer-events: auto; }
+  #settings {
+    width: min(420px, 88%);
+    background: var(--surface-solid);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-3);
+    padding: 22px;
+    transform: scale(.92) translateY(10px);
+    transition: transform .25s var(--spring);
+  }
+  #settings-mask.show #settings { transform: scale(1) translateY(0); }
+  #settings h3 {
+    font-size: 15px; font-weight: 600;
+    margin-bottom: 4px;
+  }
+  #settings .desc {
+    font-size: 12px; color: var(--text-3);
+    margin-bottom: 16px;
+  }
+  .set-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px;
+    background: var(--hover);
+    border-radius: var(--r-md);
+    margin-bottom: 10px;
+  }
+  .set-row .path {
+    flex: 1; min-width: 0;
+    font-size: 11.5px;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .set-row .set-label {
+    flex: 1;
+    font-size: 12.5px;
+    color: var(--text-1);
+  }
+  .set-row .set-label small {
+    display: block;
+    font-size: 11px;
+    color: var(--text-3);
+    margin-top: 2px;
+  }
+  .set-section {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-3);
+    margin: 14px 2px 8px;
+    letter-spacing: .5px;
+  }
+  /* 开关 */
+  .switch {
+    position: relative;
+    width: 40px; height: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .switch input { display: none; }
+  .switch .track {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,.15);
+    border-radius: 11px;
+    transition: background .2s var(--ease);
+  }
+  .switch .track::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 18px; height: 18px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    transition: transform .2s var(--spring);
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track::after { transform: translateX(18px); }
+  .set-actions {
+    display: flex; justify-content: flex-end; gap: 8px;
+    margin-top: 16px;
+  }
+
+  /* ===== Toast ===== */
+  #toast {
+    position: fixed;
+    top: 60px; left: 50%;
+    transform: translateX(-50%) translateY(-10px) scale(.95);
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 18px;
+    background: rgba(28, 28, 32, .92);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all .3s var(--ease);
+    z-index: 99;
+    box-shadow: var(--shadow-2);
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+  #toast .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; }
+
+  /* ===== 小窗口自适应 ===== */
+  @media (max-width: 620px) {
+    .brand .name { display: none; }
+    #bottombar .hint { display: none; }
+    .tab { padding: 6px 12px; }
+  }
+  @media (max-width: 460px) {
+    .tab span { display: none; }
+    .tab { padding: 6px 10px; }
+  }
+</style>
+</head>
+<body data-page-node-id="WeRht0ZEvdGL1vX2WCFvh1">
+  <div id="app" data-page-node-id="eoxlqAfWV3EfChqmSYNEbB">
+    <!-- 顶部 -->
+    <div id="topbar" data-page-node-id="KeT8Fs4sSXKudsbWcT2pzX">
+      <div class="brand" data-page-node-id="lF17p1PqvWRTJSS9QrF5FS">
+        <div class="logo" data-page-node-id="RsHw45HmQlHpuDLxHocfjd">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round" data-page-node-id="fLJ7saWvCxS1C2ySIkxAUk">
+            <circle cx="12" cy="12" r="9" fill="rgba(255,255,255,.15)" data-page-node-id="SQhnWFcbmjKM2VapnYxmtH"/>
+            <circle cx="9" cy="10" r="1" fill="#fff" data-page-node-id="BlOiGGSXNa9Ft5xrQ0AO4j"/>
+            <circle cx="15" cy="10" r="1" fill="#fff" data-page-node-id="L40dcAgVBcxGIHacfxYu7K"/>
+            <path d="M8.5 14.5 Q12 17 15.5 14.5" data-page-node-id="pwlCfslRm9sTaRCXDZlK2D"/>
+          </svg>
+        </div>
+        <span class="name" data-page-node-id="5u2vZwu8xVPSvOa4aeP04a">表情包助手</span>
+      </div>
+      <div class="spacer" data-page-node-id="MB4LdSV5gHlT1RgEUYLwUu"></div>
+      <button class="win-btn" id="btn-min" title="最小化" data-page-node-id="fNHb5zqe8U7tIpjhuJuFT4">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" data-page-node-id="SIHjzJNHdU2uZogAeT8ju3"><path d="M5 12h14" data-page-node-id="V18MGx6PGLFghDpDv57ZPO"/></svg>
+      </button>
+      <button class="win-btn close" id="btn-close" title="关闭" data-page-node-id="lEk7J0kagtFFgsODfEqpig">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.2" stroke-linecap="round" data-page-node-id="TChHTllmCyKWMOnEJu2H50">
+          <path d="M6 6l12 12M18 6L6 18" data-page-node-id="eqTvgNS4L13Tt38dcAY2jL"/></svg>
+      </button>
+    </div>
+
+    <!-- 标签 + 搜索 + 设置 -->
+    <div id="nav-row" data-page-node-id="Jm4erD6l7bbxzbz4ddW6ju">
+      <div class="tabs" data-page-node-id="xbdDNYRfAiZocaFUdlxQZI">
+        <button class="tab active" data-page="memes" data-page-node-id="8HxfG2dldD8ycdtuomijD2">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="smg0U97BK1zB3A6ugTixKS">
+            <circle cx="12" cy="12" r="9" data-page-node-id="fSHLPAzETaORAtqRrdNAYj"/>
+            <path d="M8.5 14.5 Q12 17 15.5 14.5" data-page-node-id="ZmjmaFxfjyyr9MzTDf8MGl"/>
+            <circle cx="9" cy="10" r=".5" fill="currentColor" data-page-node-id="28CPKTT223LATuOUl3PjMk"/>
+            <circle cx="15" cy="10" r=".5" fill="currentColor" data-page-node-id="7y2hXxWPspSasvw9JMZkCU"/>
+          </svg>
+          <span data-page-node-id="SpV2Rw740mNB24bXA1DPtZ">表情包</span>
+        </button>
+        <button class="tab" data-page="history" data-page-node-id="mSJHL3eEUDnrrJjXvnsjvF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="JWFQQgRqgBHiyhLBVXyGgB">
+            <rect x="8" y="2" width="8" height="4" rx="1" data-page-node-id="Sj7BukEu3T6RHeGXRBW2aC"/>
+            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" data-page-node-id="mOq55emciDRWcz1UhpqDQH"/>
+          </svg>
+          <span data-page-node-id="XlG1ukr3GgoFXG9LQipWUS">剪贴板</span>
+        </button>
+      </div>
+      <div id="search-box" data-page-node-id="GnSXzGA9Q7yQfhSbkJHZb0">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.4" stroke-linecap="round" data-page-node-id="a17W8z6fubhoWeM2XYOpLz">
+          <circle cx="11" cy="11" r="7" data-page-node-id="7LF4Z0wT17dmdM1YgkuoCO"/><path d="m20 20-3.5-3.5" data-page-node-id="IfLJmVQHkDyrbj59CUgv9u"/>
+        </svg>
+        <input id="search" type="text" placeholder="搜索…" data-page-node-id="2tTVWow2ZDjKHtVx6GTaZt">
+      </div>
+      <button class="icon-btn" id="btn-settings" title="设置" data-page-node-id="V7bsEDfDOqGqeO5sY0dXHI">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-page-node-id="WH9kGSaGXZhRpntOhX8l8p">
+          <circle cx="12" cy="12" r="3" data-page-node-id="fowoJS8Y3nHlzsBoBISy4R"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" data-page-node-id="KJzpyBCn4QItRLmKpzVRmm"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- 页面 -->
+    <div id="pages" data-page-node-id="p7N49N2VUP8D7oyT6XFnhb">
+      <div class="page active" id="page-memes" data-page-node-id="MY4g3cy9N9UCJmnmSIKKmb">
+        <div id="grid-scroll" data-page-node-id="eML0LRmeWX0RYQNZ9m9rmQ"><div id="grid" data-page-node-id="AB4ItyVJmhkvOnLZxRYwmk"></div></div>
+      </div>
+      <div class="page" id="page-history" data-page-node-id="59jAF3m5tSS24xusMMpAmw">
+        <div id="history-scroll" data-page-node-id="di8FLPLxmAOAzDrxYNp015"><div id="history-list" data-page-node-id="7yVCD49U78oprW6F6yssUX"></div></div>
+      </div>
+    </div>
+
+    <!-- 底部 -->
+    <div id="bottombar" data-page-node-id="PfnmwBWMcyuCKF0zSEYkua">
+      <div class="hint" id="hint-memes" data-page-node-id="WjGuSxjNthtbbCX0rUYt5t">
+        <span data-page-node-id="IIko2e6n1TYjnK0hLu5RwW">发送快捷键</span>
+        <span class="kbd" data-page-node-id="70e71J1RBtK6DilJYaLfqE">Ctrl</span>+<span class="kbd" data-page-node-id="YxyG6WjLoBBh4IddItV4Qj">Shift</span>+<span class="kbd" data-page-node-id="yZ1Ytgu9INVAotZ4j8hjpJ">V</span>
+      </div>
+      <div class="hint" id="hint-history" style="display:none;" data-page-node-id="iS6dr3BMjHC1QVcu4Ev0Fp">
+        <span data-page-node-id="fzlH9lRerfNsUOlpUQYh7y">点击记录即可重新复制</span>
+      </div>
+      <div class="spacer" data-page-node-id="IWkBWOD9hybDDPIbxrwmF9"></div>
+      <button class="btn danger-text" id="btn-clear-history" style="display:none;" data-page-node-id="fiFE6IQsbm2XbHdrpx6hkU">清空历史</button>
+      <button class="btn btn-ghost" id="btn-paste" data-page-node-id="CrP6rl8DBYyc9NkdKrDp0K">粘贴导入</button>
+      <button class="btn btn-primary" id="btn-import" data-page-node-id="ONHfwDlTwWhijR0FYBE9s8">导入表情</button>
+    </div>
+  </div>
+
+  <!-- 设置弹层 -->
+  <div id="settings-mask" data-page-node-id="HTqvi5yPauOmGCHTsaAmVN">
+    <div id="settings" data-page-node-id="A83ofTTbl6e2IF9MTiAae2">
+      <h3 data-page-node-id="L88Jprzz2Rm6BVXSlZghnk">设置</h3>
+      <div class="desc" data-page-node-id="YxBQEYoSpRne23JQRxPb0X">数据存储与个性化选项</div>
+
+      <div class="set-section">数据存储</div>
+      <div class="set-row" data-page-node-id="f4Bc8bGHdRWHt40Jfa51kG">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="#5f5f66" stroke-width="2" stroke-linecap="round" data-page-node-id="vBHeT4oIDnmloMhckvChyG">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" data-page-node-id="ZWOETqQyqy9nx0cGimVa11"/>
+        </svg>
+        <div class="path" id="data-dir-path" data-page-node-id="Gd1EV5sP2UD3BiRibjzffn">加载中…</div>
+        <button class="btn btn-ghost" id="btn-change-dir" style="height:28px;padding:0 12px;font-size:11.5px;" data-page-node-id="Rp6BKKiykaGy49QigcatOL">更改</button>
+      </div>
+
+      <div class="set-section">启动与行为</div>
+      <div class="set-row">
+        <div class="set-label">开机自启<small>登录 Windows 后自动驻留托盘</small></div>
+        <label class="switch">
+          <input type="checkbox" id="sw-autostart">
+          <span class="track"></span>
+        </label>
+      </div>
+      <div class="set-row">
+        <div class="set-label">点击表情后自动隐藏窗口<small>复制后方便直接切回聊天窗口</small></div>
+        <label class="switch">
+          <input type="checkbox" id="sw-autohide">
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="set-section">剪贴板</div>
+      <div class="set-row">
+        <div class="set-label">自动记录剪贴板<small>复制的文本和图片自动存入历史</small></div>
+        <label class="switch">
+          <input type="checkbox" id="sw-watch">
+          <span class="track"></span>
+        </label>
+      </div>
+
+      <div class="set-actions" data-page-node-id="roGNSfEzJXHUCypn9DATWe">
+        <button class="btn btn-primary" id="btn-close-settings" style="height:30px;padding:0 16px;font-size:12px;" data-page-node-id="aRlxFDDJU1xwxCvgijqikB">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" data-page-node-id="0XacFPTzEtCduqN4tGKdSt"><span class="dot" data-page-node-id="h9nUz4vlswYPb5NhYPQBoC"></span><span id="toast-text" data-page-node-id="bM2AUa4SezKcQ4rDCcD5oK"></span></div>
+
+  <script src="qrc:///qtwebchannel/qwebchannel.js"></script>
+  <script>
+    let bridge = null;
+    let memes = [];
+    let historyItems = [];
+    let currentFilter = '';
+    let currentPage = 'memes';
+
+    function initBridge() {
+      if (typeof qt !== 'undefined' && qt.webChannelTransport) {
+        new QWebChannel(qt.webChannelTransport, function(channel) {
+          bridge = channel.objects.bridge;
+          bridge.memesLoaded.connect(list => { memes = list || []; renderGrid(); });
+          bridge.historyLoaded.connect(list => { historyItems = list || []; renderHistory(); });
+          bridge.dataDirLoaded.connect(dir => {
+            document.getElementById('data-dir-path').textContent = dir;
+          });
+          bridge.settingsLoaded.connect(applySettings);
+          bridge.refresh();
+          bridge.getHistory();
+        });
+      } else {
+        memes = [
+          {path:'1', name:'开心', meta:'PNG · 32 KB', dataUrl:null},
+          {path:'2', name:'笑哭', meta:'GIF · 96 KB', dataUrl:null},
+        ];
+        historyItems = [
+          {id:'h1', type:'text', content:'这是一段复制的文本内容示例', time: Date.now()/1000 - 120, pinned: true},
+          {id:'h2', type:'text', content:'https://example.com/some/link', time: Date.now()/1000 - 3600, pinned: false},
+          {id:'h3', type:'image', dataUrl: null, time: Date.now()/1000 - 7200, pinned: false},
+        ];
+        renderGrid();
+        renderHistory();
+        applySettings({
+          data_dir: 'C:\\Users\\demo\\.qq_meme_tray',
+          autostart: true, watch_clipboard: true, auto_hide_on_click: true,
+        });
+      }
+    }
+
+    function applySettings(s) {
+      document.getElementById('data-dir-path').textContent = s.data_dir || '';
+      document.getElementById('sw-autostart').checked = !!s.autostart;
+      document.getElementById('sw-watch').checked = !!s.watch_clipboard;
+      document.getElementById('sw-autohide').checked = !!s.auto_hide_on_click;
+    }
+
+    // 标签切换
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        currentPage = tab.dataset.page;
+        document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t === tab));
+        document.getElementById('page-memes').classList.toggle('active', currentPage === 'memes');
+        document.getElementById('page-history').classList.toggle('active', currentPage === 'history');
+        document.getElementById('hint-memes').style.display = currentPage === 'memes' ? '' : 'none';
+        document.getElementById('hint-history').style.display = currentPage === 'history' ? '' : 'none';
+        document.getElementById('btn-clear-history').style.display = currentPage === 'history' ? '' : 'none';
+        document.getElementById('btn-paste').style.display = currentPage === 'memes' ? '' : 'none';
+        document.getElementById('btn-import').style.display = currentPage === 'memes' ? '' : 'none';
+        document.getElementById('search').placeholder = currentPage === 'memes' ? '搜索表情…' : '搜索剪贴板…';
+        if (currentPage === 'history' && bridge) bridge.getHistory();
+      });
+    });
+
+    // 表情网格
+    function renderGrid() {
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      const filtered = filterList(memes, 'name');
+      if (filtered.length === 0) {
+        grid.innerHTML = emptyHTML(
+          memes.length === 0 ? '还没有表情包' : '没有匹配的表情',
+          memes.length === 0 ? '点右下角「导入表情」开始收藏吧' : '换个关键词试试');
+        return;
+      }
+      filtered.forEach((m, i) => {
+        const card = document.createElement('div');
+        card.className = 'meme';
+        card.style.setProperty('--i', i);
+        card.innerHTML = `
+          ${m.dataUrl ? `<img src="${m.dataUrl}">` : `<img alt="">`}
+          <button class="del" title="删除">✕</button>
+          <div class="name-tag">${escapeHtml(m.name)}</div>`;
+        card.querySelector('.del').addEventListener('click', e => {
+          e.stopPropagation();
+          if (confirm(`删除「${m.name}」？`) && bridge) bridge.deleteMeme(m.path);
+        });
+        card.addEventListener('click', e => {
+          spawnRipple(e, card);
+          if (bridge) bridge.copyMeme(m.path);
+          showToast('已复制到剪贴板');
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    // 剪贴板历史
+    function renderHistory() {
+      const list = document.getElementById('history-list');
+      list.innerHTML = '';
+      const filtered = filterList(historyItems, 'content');
+      if (filtered.length === 0) {
+        list.innerHTML = emptyHTML(
+          historyItems.length === 0 ? '还没有剪贴板记录' : '没有匹配的记录',
+          historyItems.length === 0 ? '复制任何文本或图片，都会自动记录在这里' : '换个关键词试试');
+        return;
+      }
+      filtered.forEach((h, i) => {
+        const item = document.createElement('div');
+        item.className = 'h-item' + (h.pinned ? ' pinned-item' : '');
+        item.style.setProperty('--i', i);
+        const timeStr = formatTime(h.time);
+        if (h.type === 'text') {
+          item.innerHTML = `
+            <div class="h-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round">
+                <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+              </svg>
+            </div>
+            <div class="h-body">
+              <div class="h-text">${escapeHtml(h.content)}</div>
+              <div class="h-meta"><span>文本</span>·<span>${timeStr}</span></div>
+            </div>`;
+        } else {
+          item.innerHTML = `
+            <div class="h-icon">${h.dataUrl ? `<img src="${h.dataUrl}">` : ''}</div>
+            <div class="h-body">
+              <div class="h-text">图片</div>
+              <div class="h-meta"><span>图片</span>·<span>${timeStr}</span></div>
+            </div>`;
+        }
+        const actions = document.createElement('div');
+        actions.className = 'h-actions';
+        actions.innerHTML = `
+          <button class="h-act pin ${h.pinned ? 'pinned' : ''}" title="${h.pinned ? '取消置顶' : '置顶'}">
+            <svg viewBox="0 0 24 24" fill="${h.pinned ? 'currentColor' : 'none'}"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                 stroke-linejoin="round">
+              <path d="M12 17v5M9 3h6l-1 7 3 3H7l3-3-1-7z"/>
+            </svg>
+          </button>
+          <button class="h-act danger" title="删除">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round">
+              <path d="M3 6h18M8 6V4h8v2m1 0v14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V6"/>
+            </svg>
+          </button>`;
+        item.appendChild(actions);
+        actions.querySelector('.pin').addEventListener('click', e => {
+          e.stopPropagation();
+          if (bridge) bridge.pinHistoryItem(h.id);
+        });
+        actions.querySelector('.danger').addEventListener('click', e => {
+          e.stopPropagation();
+          if (bridge) bridge.deleteHistoryItem(h.id);
+        });
+        item.addEventListener('click', e => {
+          spawnRipple(e, item);
+          if (bridge) bridge.copyHistoryItem(h.id);
+          showToast('已复制');
+        });
+        list.appendChild(item);
+      });
+    }
+
+    // 工具
+    function filterList(arr, key) {
+      if (!currentFilter) return arr;
+      return arr.filter(x => (x[key] || '').toLowerCase().includes(currentFilter));
+    }
+
+    function emptyHTML(title, sub) {
+      return `
+        <div class="empty">
+          <div class="icon-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M8.5 14.5 Q12 17 15.5 14.5"/>
+              <circle cx="9" cy="10" r=".6" fill="currentColor"/>
+              <circle cx="15" cy="10" r=".6" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="t">${title}</div>
+          <div class="s">${sub}</div>
+        </div>`;
+    }
+
+    function formatTime(ts) {
+      const d = new Date(ts * 1000);
+      const now = new Date();
+      const diff = (now - d) / 1000;
+      if (diff < 60) return '刚刚';
+      if (diff < 3600) return Math.floor(diff / 60) + ' 分钟前';
+      if (diff < 86400) return Math.floor(diff / 3600) + ' 小时前';
+      const yesterday = new Date(now - 86400000);
+      if (d.toDateString() === yesterday.toDateString()) return '昨天';
+      if (d.toDateString() === now.toDateString()) return '今天';
+      return `${d.getMonth() + 1}月${d.getDate()}日`;
+    }
+
+    function spawnRipple(e, el) {
+      const r = el.getBoundingClientRect();
+      const s = Math.max(r.width, r.height);
+      const rip = document.createElement('span');
+      rip.className = 'ripple';
+      rip.style.width = rip.style.height = s + 'px';
+      rip.style.left = (e.clientX - r.left - s / 2) + 'px';
+      rip.style.top = (e.clientY - r.top - s / 2) + 'px';
+      el.appendChild(rip);
+      setTimeout(() => rip.remove(), 600);
+    }
+
+    let toastTimer = null;
+    function showToast(text) {
+      const t = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = text;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 1300);
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({
+        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+      }[c]));
+    }
+
+    // 设置
+    document.getElementById('btn-settings').addEventListener('click', () => {
+      document.getElementById('settings-mask').classList.add('show');
+      if (bridge) bridge.getSettings();
+    });
+    document.getElementById('settings-mask').addEventListener('click', e => {
+      if (e.target.id === 'settings-mask')
+        document.getElementById('settings-mask').classList.remove('show');
+    });
+    document.getElementById('btn-close-settings').addEventListener('click', () => {
+      document.getElementById('settings-mask').classList.remove('show');
+    });
+    document.getElementById('btn-change-dir').addEventListener('click', () => {
+      if (bridge) bridge.chooseDataDir();
+    });
+    document.getElementById('sw-autostart').addEventListener('change', e => {
+      if (bridge) bridge.setAutostart(e.target.checked);
+    });
+    document.getElementById('sw-watch').addEventListener('change', e => {
+      if (bridge) bridge.setWatchClipboard(e.target.checked);
+    });
+    document.getElementById('sw-autohide').addEventListener('change', e => {
+      if (bridge) bridge.setAutoHide(e.target.checked);
+    });
+
+    // 事件
+    document.getElementById('search').addEventListener('input', e => {
+      currentFilter = e.target.value.trim().toLowerCase();
+      if (currentPage === 'memes') renderGrid(); else renderHistory();
+    });
+    document.getElementById('btn-min').addEventListener('click', () => bridge && bridge.minimize());
+    document.getElementById('btn-close').addEventListener('click', () => bridge && bridge.hideWindow());
+    document.getElementById('btn-import').addEventListener('click', () => bridge && bridge.importFromFolder());
+    document.getElementById('btn-paste').addEventListener('click', () => bridge && bridge.importFromClipboard());
+    document.getElementById('btn-clear-history').addEventListener('click', () => {
+      if (confirm('清空所有剪贴板历史？（置顶的记录会保留）') && bridge) bridge.clearHistory();
+    });
+
+    initBridge();
+  </script>
+</body>
+</html>
